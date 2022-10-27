@@ -1,12 +1,7 @@
-use bollard::container::{
-    AttachContainerOptions, Config, CreateContainerOptions, StartContainerOptions,
-};
-use bollard::Docker;
-use std::default::Default;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-use tokio::runtime::Runtime;
+use std::process::{Command, Stdio};
 use toml::value::Table;
 use toml::Value;
 
@@ -70,55 +65,14 @@ fn main() {
     let conf = load_config();
 
     let img = require_config_str(&conf, "image", "name");
-    println!("{:?}", img);
+    println!("Image: {:?}", img);
 
-    let docker =
-        Docker::connect_with_local_defaults().expect("Failed to connect to local Docker daemon");
-    let rt = Runtime::new().unwrap();
-
-    // let version = rt
-    //     .block_on(docker.version())
-    //     .expect("Failed to retrieve Docker version");
-    // println!("{:?}", version);
-
-    rt.block_on(async {
-        let options = Some(CreateContainerOptions { name: "portr" });
-
-        let config = Config {
-            image: Some(img),
-            cmd: Some(vec!["/bin/bash", "-c", "ls", "-l"]),
-            attach_stdin: Some(true),
-            attach_stderr: Some(true),
-            attach_stdout: Some(true),
-            tty: Some(true),
-            open_stdin: Some(true),
-            ..Default::default()
-        };
-
-        docker
-            .create_container(options, config)
-            .await
-            .expect("Failed to create container");
-        match docker
-            .start_container("portr", None::<StartContainerOptions<String>>)
-            .await
-        {
-            Ok(_) => (),
-            Err(msg) => panic!("Error starting container: {:?}", msg),
-        };
-
-        let options = Some(AttachContainerOptions::<String> {
-            stdin: Some(true),
-            stdout: Some(true),
-            stderr: Some(true),
-            stream: Some(true),
-            logs: Some(true),
-            detach_keys: Some("ctrl-c".to_string()),
-        });
-
-        docker
-            .attach_container("portr", options)
-            .await
-            .expect("Failed to attach to container");
-    });
+    Command::new("cat")
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .expect("Failed to spawn sub-process")
+        .wait()
+        .expect("Error waiting for sub-process");
 }
