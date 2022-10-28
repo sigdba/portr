@@ -16,12 +16,21 @@ fn get_root<'a>() -> PathBuf {
 struct Config {
     image: Image,
     environment: Option<HashMap<String, String>>,
+    cli: Option<Cli>,
 }
 
 #[derive(Deserialize)]
 struct Image {
     name: String,
 }
+
+#[derive(Deserialize)]
+struct Cli {
+    args: Option<Vec<CliArg>>,
+}
+
+#[derive(Deserialize)]
+struct CliArg {}
 
 fn load_config() -> Result<Config, Box<dyn Error>> {
     let config_path = get_root().join("portr.toml");
@@ -43,6 +52,7 @@ fn add_env_args(conf: &Config, cmd: &mut Command) {
 }
 
 fn add_docker_args(conf: &Config, cmd: &mut Command) {
+    cmd.args(["-ti", "--rm"]);
     add_env_args(conf, cmd);
 }
 
@@ -65,8 +75,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         .expect("Error waiting for sub-process")
         .code()
         .unwrap();
-
-    // TODO: If we were interrupted we need to make sure the Docker process dies.
 
     process::exit(res);
 }
