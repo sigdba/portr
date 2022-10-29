@@ -1,41 +1,18 @@
 use std::env;
-use std::fs;
 use std::process;
 
-use serde::Deserialize;
-use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
+use config::Config;
+use context::LaunchContext;
+
+mod config;
+mod context;
+
 fn get_root<'a>() -> PathBuf {
     env::current_exe().unwrap().parent().unwrap().to_path_buf()
-}
-
-#[derive(Deserialize)]
-struct Config {
-    image: Image,
-    environment: Option<HashMap<String, String>>,
-    cli: Option<Cli>,
-}
-
-#[derive(Deserialize)]
-struct Image {
-    name: String,
-}
-
-#[derive(Deserialize)]
-struct Cli {
-    args: Option<Vec<CliArg>>,
-}
-
-#[derive(Deserialize)]
-struct CliArg {}
-
-fn load_config() -> Result<Config, Box<dyn Error>> {
-    let config_path = get_root().join("portr.toml");
-    let s = fs::read_to_string(&config_path)?;
-    Ok(toml::from_str(&s)?)
 }
 
 fn get_image_name(conf: &Config) -> &str {
@@ -57,18 +34,23 @@ fn add_docker_args(conf: &Config, cmd: &mut Command) {
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let conf = load_config()?;
-    let mut cmd = Command::new("docker");
+    let config_path = get_root().join("portr.toml");
+    let mut ctx = LaunchContext {
+        command: Command::new("docker"),
+        config: Config::new(&config_path)?,
+    };
 
-    cmd.arg("run")
+    ctx.command
+        .arg("run")
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
 
-    add_docker_args(&conf, &mut cmd);
-    cmd.arg(get_image_name(&conf));
+    add_docker_args(&ctx.config, &mut ctx.command);
+    ctx.command.arg(get_image_name(&ctx.config));
 
-    let res = cmd
+    let res = ctx
+        .command
         .spawn()
         .expect("Failed to spawn sub-process")
         .wait()
