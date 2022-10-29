@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use std::fs;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub image: Image,
     pub environment: Option<HashMap<String, String>>,
@@ -14,17 +14,18 @@ pub struct Config {
     pub cli: Cli,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Image {
     pub name: String,
+    pub entrypoint: Option<String>,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct Cli {
     pub args: Vec<CliArg>,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct CliArg {}
 
 impl Config {

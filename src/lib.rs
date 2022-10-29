@@ -34,18 +34,25 @@ fn add_env_args(ctx: &mut LaunchContext) -> Result<(), Box<dyn Error>> {
 
 fn add_docker_args(ctx: &mut LaunchContext) -> Result<(), Box<dyn Error>> {
     ctx.docker_args.add_args(["-ti", "--rm"]);
+    if let Some(e) = &ctx.config.image.entrypoint {
+        ctx.docker_args.add_args(["--entrypoint", e.as_str()]);
+    }
     Ok(())
 }
 
-fn passthrough_args(ctx: &mut LaunchContext, arg: &str) -> Result<(), Box<dyn Error>> {
+fn passthrough_args<'a>(
+    ctx: &mut LaunchContext,
+    arg: &'a str,
+) -> Result<Option<&'a str>, Box<dyn Error>> {
     ctx.child_args.add_args([arg]);
-    Ok(())
+    Ok(None)
 }
 
 type ConfHandler = fn(&mut LaunchContext) -> Result<(), Box<dyn Error>>;
 static CONF_HANDLERS: &'static [ConfHandler] = &[add_docker_args, add_env_args];
 
-type ArgHandler = fn(&mut LaunchContext, &str) -> Result<(), Box<dyn Error>>;
+type ArgHandler =
+    for<'a> fn(&mut LaunchContext, &'a str) -> Result<Option<&'a str>, Box<dyn Error>>;
 type ArgConfHandler = fn(&Config, &CliArg) -> Result<ArgHandler, Box<dyn Error>>;
 static ARG_CONF_HANDLERS: &'static [ArgConfHandler] = &[];
 
@@ -64,6 +71,15 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
     arg_handlers.push(passthrough_args);
+
+    for mut arg in env::args().skip(1) {
+        for hdl in &arg_handlers {
+            match hdl(&mut ctx, &arg)? {
+                None => break,
+                Some(a) => arg = a.to_string(),
+            }
+        }
+    }
 
     let res = Command::new("docker")
         .arg("run")
