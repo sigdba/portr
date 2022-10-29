@@ -9,7 +9,9 @@ use std::fs;
 pub struct Config {
     pub image: Image,
     pub environment: Option<HashMap<String, String>>,
-    pub cli: Option<Cli>,
+
+    #[serde(default)]
+    pub cli: Cli,
 }
 
 #[derive(Deserialize)]
@@ -17,12 +19,12 @@ pub struct Image {
     pub name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct Cli {
-    pub args: Option<Vec<CliArg>>,
+    pub args: Vec<CliArg>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct CliArg {}
 
 impl Config {
