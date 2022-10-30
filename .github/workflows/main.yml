@@ -16,7 +16,7 @@ jobs:
           - i686-pc-windows-gnu
           - aarch64-unknown-linux-gnu
         include:
-          - target: '*-windows-*'
+          - target: aarch64-unknown-linux-gnu
             suffix: '.exe'
 
     steps:
