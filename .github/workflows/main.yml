@@ -6,7 +6,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    steps:
+      - name: Create release
+        id: create_release
+        if: github.ref == 'refs/heads/main'
+        uses: actions/create-release@v1
+        with:
+          draft: false
+          prerelease: false
+          release_name: r${{ github.run_number }}
+          tag_name: build/${{ github.run_number }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   build:
+    needs: create-release
     runs-on: ubuntu-latest
 
     strategy:
@@ -44,7 +64,7 @@ jobs:
           export SUFFIX=$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')
           export ARCH=$(echo '${{ matrix.target }}' |cut -d - -f 1)
           export OS=$(echo '${{ matrix.target }}' |cut -d - -f 3)
-          export RELEASE=${OS}-${ARCH}-r${{ github.run_number }}
+          export RELEASE=portr-${OS}-${ARCH}-r${{ github.run_number }}
           export BIN=target/${{ matrix.target }}/release/portr${SUFFIX}
           ls -l $BIN || exit 1
           mkdir $RELEASE || exit 1
@@ -53,5 +73,16 @@ jobs:
           ls -l $RELEASE/* || exit 1
           zip -r ${RELEASE}.zip $RELEASE/ || exit 1
 
-      - name: List executables
-        run: find target -name "portr$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')"
+      - name: List packages
+        run: ls -lh *.zip
+
+      - name: upload artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.steps.create_release.outputs.upload_url }}
+          asset_path: portr-*.zip
+          # asset_name: docker-dev.sh
+          asset_content_type: application/zip
