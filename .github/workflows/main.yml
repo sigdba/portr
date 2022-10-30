@@ -1,0 +1,42 @@
+name: Build, test, and release
+
+on:
+  push:
+    branches: '*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target:
+          - i686-unknown-linux-gnu
+          - i686-pc-windows-gnu
+          - aarch64-unknown-linux-gnu
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Install rustup
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+      - name: Install Rust
+        run: rustup toolchain install stable
+
+      - name: Install cross
+        run: cargo install -f cross
+
+      - name: Run tests
+        run: cross test
+
+      - name: Build release executable
+        run: cross build --target ${{ matrix.target }} --release
+
+      - name: Build debug executable
+        run: cross build --target ${{ matrix.target }}
+
+      - name: List executables
+        run: find target -name portr
