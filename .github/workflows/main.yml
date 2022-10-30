@@ -83,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          upload_url: ${{ needs.create-release.steps.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: portr-*.zip
           # asset_name: docker-dev.sh
           asset_content_type: application/zip
