@@ -79,4 +79,4 @@ jobs:
           fail_on_unmatched_files: yes
           draft: no
           prerelease: no
-          tag: r${{ github.run_number }}
+          tag_name: r${{ github.run_number }}
