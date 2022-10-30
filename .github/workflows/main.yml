@@ -39,4 +39,4 @@ jobs:
         run: cross build --target ${{ matrix.target }}
 
       - name: List executables
-        run: find target -name 'portr${{ matrix.suffix }}'
+        run: find target -name "portr$(echo '${{ matrix.suffix }}' |grep -q '\-windows-' && echo '.exe')"
