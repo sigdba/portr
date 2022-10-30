@@ -37,6 +37,12 @@ fn add_docker_args(ctx: &mut LaunchContext) -> Result<(), Box<dyn Error>> {
     if let Some(e) = &ctx.config.image.entrypoint {
         ctx.docker_args.add_args(["--entrypoint", e.as_str()]);
     }
+    if let Some(p) = &ctx.config.run.mount_pwd {
+        ctx.docker_args.add_args([
+            "-v",
+            format!("{}:{}", &env::current_dir()?.to_str().unwrap(), p.as_str()).as_str(),
+        ])
+    }
     Ok(())
 }
 

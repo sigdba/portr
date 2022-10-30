@@ -8,6 +8,9 @@ edition = "2021"
 # TODO: Consider this library for a handler registry.
 #       https://github.com/dtolnay/linkme
 
+# TODO: Consider this library for emedding assets in the binary.
+#       https://docs.rs/packer/latest/packer/index.html
+
 [dependencies]
 # clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }

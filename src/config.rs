@@ -8,6 +8,7 @@ use std::fs;
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub image: Image,
+    pub run: Run,
     pub environment: Option<HashMap<String, String>>,
 
     #[serde(default)]
@@ -18,6 +19,11 @@ pub struct Config {
 pub struct Image {
     pub name: String,
     pub entrypoint: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Run {
+    pub mount_pwd: Option<String>,
 }
 
 #[derive(Deserialize, Default, Debug)]
