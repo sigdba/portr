@@ -6,28 +6,28 @@ on:
   workflow_dispatch:
 
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
+  # create-release:
+  #   runs-on: ubuntu-latest
 
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #   outputs:
+  #     upload_url: ${{ steps.create_release.outputs.upload_url }}
 
-    steps:
-      # TODO: Replace this action with something that isn't deprecated
-      - name: Create release
-        id: create_release
-        if: github.ref == 'refs/heads/main'
-        uses: actions/create-release@v1
-        with:
-          draft: false
-          prerelease: false
-          release_name: r${{ github.run_number }}
-          tag_name: build/${{ github.run_number }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+  #   steps:
+  #     # TODO: Replace this action with something that isn't deprecated
+  #     - name: Create release
+  #       id: create_release
+  #       if: github.ref == 'refs/heads/main'
+  #       uses: actions/create-release@v1
+  #       with:
+  #         draft: false
+  #         prerelease: false
+  #         release_name: r${{ github.run_number }}
+  #         tag_name: build/${{ github.run_number }}
+  #       env:
+  #         GITHUB_TOKEN: ${{ github.token }}
 
   build:
-    needs: create-release
+    # needs: create-release
     runs-on: ubuntu-latest
 
     strategy:
@@ -77,13 +77,18 @@ jobs:
       - name: List packages
         run: ls -lh *.zip
 
-      - name: upload artifact
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v3
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: portr-*.zip
-          # asset_name: docker-dev.sh
-          asset_content_type: application/zip
+          name: zip
+          path: portr-*.zip
+
+      # - name: upload artifact
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     # upload_url: ${{ needs.create-release.outputs.upload_url }}
+      #     files: portr-*.zip
+      #     fail_on_unmatched_files: yes
+      #     # asset_name: docker-dev.sh
+      #     # asset_content_type: application/zip
