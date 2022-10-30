@@ -36,4 +36,4 @@ jobs:
         run: cross build --target ${{ matrix.target }}
 
       - name: List executables
-        run: find target -name portr*
+        run: find target -name 'portr*'
