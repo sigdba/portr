@@ -6,28 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # create-release:
-  #   runs-on: ubuntu-latest
-
-  #   outputs:
-  #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-
-  #   steps:
-  #     # TODO: Replace this action with something that isn't deprecated
-  #     - name: Create release
-  #       id: create_release
-  #       if: github.ref == 'refs/heads/main'
-  #       uses: actions/create-release@v1
-  #       with:
-  #         draft: false
-  #         prerelease: false
-  #         release_name: r${{ github.run_number }}
-  #         tag_name: build/${{ github.run_number }}
-  #       env:
-  #         GITHUB_TOKEN: ${{ github.token }}
-
   build:
-    # needs: create-release
     runs-on: ubuntu-latest
 
     strategy:
@@ -57,9 +36,6 @@ jobs:
       - name: Build release executable
         run: cross build --target ${{ matrix.target }} --release
 
-      # - name: Build debug executable
-      #   run: cross build --target ${{ matrix.target }}
-
       - name: Build release package
         run: |
           export SUFFIX=$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')
@@ -80,15 +56,26 @@ jobs:
       - name: Upload package artifact
         uses: actions/upload-artifact@v3
         with:
-          name: zip
+          name: zips
           path: portr-*.zip
 
-      # - name: upload artifact
-      #   if: github.ref == 'refs/heads/main'
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     # upload_url: ${{ needs.create-release.outputs.upload_url }}
-      #     files: portr-*.zip
-      #     fail_on_unmatched_files: yes
-      #     # asset_name: docker-dev.sh
-      #     # asset_content_type: application/zip
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: dist
+
+      - name: List artifacts
+        run: find dist -type f
+
+      - name: upload artifact
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          name: r${{ github.run_number }}
+          files: dist/zips/portr-*.zip
+          fail_on_unmatched_files: yes
+          draft: no
+          prerelease: no
+          tag: r${{ github.run_number }}
