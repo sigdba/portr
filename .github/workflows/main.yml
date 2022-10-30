@@ -16,6 +16,10 @@ jobs:
           - i686-pc-windows-gnu
           - aarch64-unknown-linux-gnu
 
+          # https://github.com/cross-rs/cross-toolchains#apple-targets
+          # - x86_64-apple-darwin
+          # - aarch64-apple-darwin
+
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -40,11 +44,13 @@ jobs:
           export SUFFIX=$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')
           export ARCH=$(echo '${{ matrix.target }}' |cut -d - -f 1)
           export OS=$(echo '${{ matrix.target }}' |cut -d - -f 3)
-          export RELEASE=${OS}-${ARCH}-${{ github.run_number }}
-          mkdir $RELEASE
-          cp target/${{ matrix.target }}/release/portr${SUFFIX} $RELEASE/
-          cp LICENSE README.md portr.toml.example $RELEASE/
-          zip ${RELEASE}.zip $RELEASE/
+          export RELEASE=${OS}-${ARCH}-r${{ github.run_number }}
+          export BIN=target/${{ matrix.target }}/release/portr${SUFFIX}
+          ls -l $BIN || exit 1
+          mkdir $RELEASE || exit 1
+          cp $BIN $RELEASE/ || exit 1
+          cp LICENSE README.md portr.toml.example $RELEASE/ || exit 1
+          zip ${RELEASE}.zip $RELEASE/ || exit 1
 
       - name: List executables
         run: find target -name "portr$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')"
