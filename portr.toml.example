@@ -1,0 +1,9 @@
+[image]
+name = "sigcorp/tomcat:latest-8-jdk8"
+entrypoint = "/bin/bash"
+
+[run]
+mount_pwd = "/portr_pwd"
+
+[environment]
+TOMCAT_MEMORY_ARGS="-Xmx2049m"

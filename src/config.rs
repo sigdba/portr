@@ -36,7 +36,13 @@ pub struct CliArg {}
 
 impl Config {
     pub fn new<'a>(config_path: &'a PathBuf) -> Result<Self, Box<dyn Error>> {
-        let s = fs::read_to_string(&config_path)?;
+        let s = fs::read_to_string(&config_path).or_else(|e| {
+            Err(format!(
+                "Error reading config file: {}\n{}",
+                config_path.to_str().unwrap_or("<path unknown>"),
+                e
+            ))
+        })?;
         Ok(toml::from_str(&s)?)
     }
 }
