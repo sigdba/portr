@@ -51,7 +51,7 @@ jobs:
           cp $BIN $RELEASE/ || exit 1
           cp LICENSE README.md portr.toml.example $RELEASE/ || exit 1
           ls -l $RELEASE/* || exit 1
-          zip ${RELEASE}.zip $RELEASE/ || exit 1
+          zip -r ${RELEASE}.zip $RELEASE/ || exit 1
 
       - name: List executables
         run: find target -name "portr$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')"
