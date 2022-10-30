@@ -23,9 +23,6 @@ jobs:
       - name: Install rustup
         run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-      - name: Install Rust
-        run: rustup toolchain install stable
-
       - name: Install cross
         run: cargo install -f cross
 
@@ -39,4 +36,4 @@ jobs:
         run: cross build --target ${{ matrix.target }}
 
       - name: List executables
-        run: find target -name portr
+        run: find target -name portr*
