@@ -13,6 +13,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
 
     steps:
+      # TODO: Replace this action with something that isn't deprecated
       - name: Create release
         id: create_release
         if: github.ref == 'refs/heads/main'
@@ -82,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          upload_url: ${{ needs.create_release.steps.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.create-release.steps.create_release.outputs.upload_url }}
           asset_path: portr-*.zip
           # asset_name: docker-dev.sh
           asset_content_type: application/zip
