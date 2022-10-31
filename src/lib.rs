@@ -1,25 +1,22 @@
-use crate::config::CliArg;
 use std::env;
 use std::process;
 
 use std::error::Error;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
-use config::Config;
+use config::{CliArg, Config};
 use context::ArgVector;
 use context::LaunchContext;
 
 mod config;
 mod context;
+mod docker;
+mod image;
+mod util;
 
 fn get_root<'a>() -> PathBuf {
     env::current_exe().unwrap().parent().unwrap().to_path_buf()
-}
-
-fn get_image_name(conf: &Config) -> &str {
-    // TODO: Add image building, etc.
-    &conf.image.name
 }
 
 fn add_env_args(ctx: &mut LaunchContext) -> Result<(), Box<dyn Error>> {
@@ -64,7 +61,13 @@ static ARG_CONF_HANDLERS: &'static [ArgConfHandler] = &[];
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let config_path = get_root().join("portr.toml");
-    let mut ctx = LaunchContext::new(Config::new(&config_path)?);
+    let mut ctx = LaunchContext::new(
+        Config::new(&config_path)?,
+        config_path
+            .parent()
+            .ok_or("Config path has no parent")?
+            .to_path_buf(),
+    );
 
     for h in CONF_HANDLERS {
         h(&mut ctx)?;
@@ -87,13 +90,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let res = Command::new("docker")
-        .arg("run")
+    let res = docker::docker_command(&ctx)?
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
-        .args(ctx.docker_args)
-        .arg(get_image_name(&ctx.config))
+        .arg("run")
+        .args(&ctx.docker_args)
+        .arg(image::get_image_name(&ctx)?)
         .args(ctx.child_args)
         .spawn()?
         .wait()?

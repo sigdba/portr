@@ -1,5 +1,6 @@
 [image]
-name = "sigcorp/tomcat:latest-8-jdk8"
+name = "archlinux:latest"
+load_file = "archlinux.tar"
 entrypoint = "/bin/bash"
 
 [run]
