@@ -5,6 +5,8 @@ use std::path::PathBuf;
 
 use std::fs;
 
+use crate::util;
+
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub image: Image,
@@ -18,6 +20,7 @@ pub struct Config {
 #[derive(Deserialize, Debug)]
 pub struct Image {
     pub name: String,
+    pub load_file: Option<String>,
     pub entrypoint: Option<String>,
 }
 
@@ -36,13 +39,11 @@ pub struct CliArg {}
 
 impl Config {
     pub fn new<'a>(config_path: &'a PathBuf) -> Result<Self, Box<dyn Error>> {
-        let s = fs::read_to_string(&config_path).or_else(|e| {
-            Err(format!(
-                "Error reading config file: {}\n{}",
-                config_path.to_str().unwrap_or("<path unknown>"),
-                e
-            ))
-        })?;
+        let s = util::with_path(
+            &config_path,
+            fs::read_to_string,
+            "Error reading config file",
+        )?;
         Ok(toml::from_str(&s)?)
     }
 }
