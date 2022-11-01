@@ -5,6 +5,8 @@ use std::path::PathBuf;
 
 use std::fs;
 
+use crate::util::ResultExt;
+
 use crate::util;
 
 #[derive(Deserialize, Debug)]
@@ -24,13 +26,19 @@ pub struct Image {
     pub entrypoint: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Default, Debug)]
 pub struct Run {
     pub mount_pwd: Option<String>,
+
+    #[serde(default)]
+    pub docker_args: Vec<String>,
+    #[serde(default)]
+    pub child_args: Vec<String>,
 }
 
 #[derive(Deserialize, Default, Debug)]
 pub struct Cli {
+    #[serde(default)]
     pub args: Vec<CliArg>,
 }
 
@@ -44,6 +52,9 @@ impl Config {
             fs::read_to_string,
             "Error reading config file",
         )?;
-        Ok(toml::from_str(&s)?)
+        Ok(toml::from_str(&s).wrap(format!(
+            "Error parsing config: {}",
+            &config_path.to_str().unwrap_or("<Unknown Path>")
+        ))?)
     }
 }

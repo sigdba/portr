@@ -40,6 +40,12 @@ fn add_docker_args(ctx: &mut LaunchContext) -> Result<(), Box<dyn Error>> {
             format!("{}:{}", &env::current_dir()?.to_str().unwrap(), p.as_str()).as_str(),
         ])
     }
+    ctx.docker_args.add_args(&ctx.config.run.docker_args);
+    Ok(())
+}
+
+fn add_child_args(ctx: &mut LaunchContext) -> Result<(), Box<dyn Error>> {
+    ctx.child_args.add_args(&ctx.config.run.child_args);
     Ok(())
 }
 
@@ -52,7 +58,7 @@ fn passthrough_args<'a>(
 }
 
 type ConfHandler = fn(&mut LaunchContext) -> Result<(), Box<dyn Error>>;
-static CONF_HANDLERS: &'static [ConfHandler] = &[add_docker_args, add_env_args];
+static CONF_HANDLERS: &'static [ConfHandler] = &[add_docker_args, add_env_args, add_child_args];
 
 type ArgHandler =
     for<'a> fn(&mut LaunchContext, &'a str) -> Result<Option<&'a str>, Box<dyn Error>>;
@@ -90,18 +96,21 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let res = docker::docker_command(&ctx)?
-        .stdin(Stdio::inherit())
+    let mut cmd = docker::docker_command(&ctx)?;
+
+    cmd.stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .arg("run")
         .args(&ctx.docker_args)
         .arg(image::get_image_name(&ctx)?)
-        .args(ctx.child_args)
-        .spawn()?
-        .wait()?
-        .code()
-        .unwrap();
+        .args(ctx.child_args);
+
+    if let Some(_) = env::var_os("PORTR_DEBUG") {
+        eprintln!("Cmd: {:?}", cmd)
+    }
+
+    let res = cmd.spawn()?.wait()?.code().unwrap();
 
     process::exit(res);
 }
