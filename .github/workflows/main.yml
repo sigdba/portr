@@ -24,14 +24,15 @@ jobs:
         include:
           - target: i686-unknown-linux-gnu
             runner: ubuntu-latest
+            cross: true
 
           - target: i686-pc-windows-gnu
             runner: ubuntu-latest
-            channel: stable
+            cross: true
 
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-latest
-            channel: stable
+            cross: true
 
           - target: aarch64-apple-darwin
             runner: macos-12
@@ -57,8 +58,16 @@ jobs:
         if: ${{ matrix.channel }}
         run: rustup target add ${{ matrix.target }}
 
-      - name: Build release executable
+      - name: Build release executable (direct)
         run: cargo build --target ${{ matrix.target }} --release
+
+      - name: Install cross
+        if: ${{ matrix.cross }}
+        run: cargo install -f cross
+
+      - name: Build release executable (cross)
+        if: ${{ matrix.cross }}
+        run: cross build --target ${{ matrix.target }} --release
 
       - name: Build release package
         run: |
