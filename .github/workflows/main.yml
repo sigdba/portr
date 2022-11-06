@@ -15,73 +15,38 @@ jobs:
       - name: Run tests
         run: cargo test
 
-  # build:
-  #   runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.runner }}
 
-  #   strategy:
-  #     matrix:
-  #       target:
-  #         - i686-unknown-linux-gnu
-  #         - i686-pc-windows-gnu
-  #         - aarch64-unknown-linux-gnu
-
-  #         # https://github.com/cross-rs/cross-toolchains#apple-targets
-  #         # - x86_64-apple-darwin
-  #         # - aarch64-apple-darwin
-
-  #   steps:
-  #     - name: Check out code
-  #       uses: actions/checkout@v3
-
-  #     - name: Install rustup
-  #       run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-  #     - name: Install cross
-  #       run: cargo install -f cross
-
-  #     - name: Run tests
-  #       run: cross test
-
-  #     - name: Build release executable
-  #       run: cross build --target ${{ matrix.target }} --release
-
-  #     - name: Build release package
-  #       run: |
-  #         export SUFFIX=$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')
-  #         export ARCH=$(echo '${{ matrix.target }}' |cut -d - -f 1)
-  #         export OS=$(echo '${{ matrix.target }}' |cut -d - -f 3)
-  #         export RELEASE=portr-${OS}-${ARCH}-r${{ github.run_number }}
-  #         export BIN=target/${{ matrix.target }}/release/portr${SUFFIX}
-  #         ls -l $BIN || exit 1
-  #         mkdir $RELEASE || exit 1
-  #         cp $BIN $RELEASE/ || exit 1
-  #         cp LICENSE README.md portr.toml.example $RELEASE/ || exit 1
-  #         ls -l $RELEASE/* || exit 1
-  #         zip -r ${RELEASE}.zip $RELEASE/ || exit 1
-
-  #     - name: List packages
-  #       run: ls -lh *.zip
-
-  #     - name: Upload package artifact
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: zips
-  #         path: portr-*.zip
-
-  mac-build:
-    needs: test
-    runs-on: macos-12
     strategy:
       matrix:
-        target:
-          - aarch64-apple-darwin
+        include:
+          - target: i686-unknown-linux-gnu
+            runner: ubuntu-latest
+
+          - target: i686-pc-windows-gnu
+            runner: ubuntu-latest
+
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+
+          - target: aarch64-apple-darwin
+            runner: macos-12
+            channel: nightly
+
+          - target: x86_64-apple-darwin
+            runner: macos-12
+
+          # https://github.com/cross-rs/cross-toolchains#apple-targets
+          # - x86_64-apple-darwin
+          # - aarch64-apple-darwin
 
     steps:
       - name: Check out code
         uses: actions/checkout@v3
 
       - name: Install toolchain
-        run: rustup toolchain install nightly -t ${{ matrix.target }}
+        run: rustup toolchain install ${{ matrix.channel }} -t ${{ matrix.target }}
 
       - name: Add target
         run: rustup target add ${{ matrix.target }}
@@ -89,8 +54,28 @@ jobs:
       - name: Build release executable
         run: cargo build --target ${{ matrix.target }} --release
 
-      - name: Run tests
-        run: cargo test --target ${{ matrix.target }}
+      - name: Build release package
+        run: |
+          export SUFFIX=$(echo '${{ matrix.target }}' |grep -q '\-windows-' && echo '.exe')
+          export ARCH=$(echo '${{ matrix.target }}' |cut -d - -f 1)
+          export OS=$(echo '${{ matrix.target }}' |cut -d - -f 3)
+          export RELEASE=portr-${OS}-${ARCH}-r${{ github.run_number }}
+          export BIN=target/${{ matrix.target }}/release/portr${SUFFIX}
+          ls -l $BIN || exit 1
+          mkdir $RELEASE || exit 1
+          cp $BIN $RELEASE/ || exit 1
+          cp LICENSE README.md portr.toml.example $RELEASE/ || exit 1
+          ls -l $RELEASE/* || exit 1
+          zip -r ${RELEASE}.zip $RELEASE/ || exit 1
+
+      - name: List packages
+        run: ls -lh *.zip
+
+      # - name: Upload package artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: zips
+      #     path: portr-*.zip
 
   # release:
   #   runs-on: ubuntu-latest
