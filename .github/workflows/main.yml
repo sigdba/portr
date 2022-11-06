@@ -6,22 +6,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check out code
+  #       uses: actions/checkout@v3
 
-      - name: Run tests
-        run: cargo test
+  #     - name: Run tests
+  #       run: cargo test
 
   build:
     runs-on: ${{ matrix.runner }}
 
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
-
         include:
           - target: i686-unknown-linux-gnu
             runner: ubuntu-latest
