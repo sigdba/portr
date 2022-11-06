@@ -79,11 +79,8 @@ jobs:
       - name: Build release executable
         run: cargo build --target ${{ matrix.target }} --release
 
-      - name: Build release executable
-        run: cross build --target ${{ matrix.target }} --release
-
-      # - name: Run tests
-      #   run: cargo test
+      - name: Run tests
+        run: cargo test --target ${{ matrix.target }}
 
   # release:
   #   runs-on: ubuntu-latest
