@@ -6,15 +6,42 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Run tests
+        run: cargo test
+
+  build:
+    needs: test
+    runs-on: ${{ matrix.runner }}
 
     strategy:
+      fail-fast: false
       matrix:
-        target:
-          - i686-unknown-linux-gnu
-          - i686-pc-windows-gnu
-          - aarch64-unknown-linux-gnu
+        include:
+          - target: i686-unknown-linux-gnu
+            runner: ubuntu-latest
+            cross: true
+
+          - target: i686-pc-windows-gnu
+            runner: ubuntu-latest
+            cross: true
+
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+            cross: true
+
+          - target: aarch64-apple-darwin
+            runner: macos-12
+            channel: nightly
+
+          - target: x86_64-apple-darwin
+            runner: macos-12
+            channel: stable
 
           # https://github.com/cross-rs/cross-toolchains#apple-targets
           # - x86_64-apple-darwin
@@ -24,16 +51,24 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Install rustup
-        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Install toolchain
+        if: ${{ matrix.channel }}
+        run: rustup toolchain install ${{ matrix.channel }} -t ${{ matrix.target }}
+
+      - name: Add target
+        if: ${{ matrix.channel }}
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Build release executable (direct)
+        if: ${{ matrix.channel }}
+        run: cargo build --target ${{ matrix.target }} --release
 
       - name: Install cross
+        if: ${{ matrix.cross }}
         run: cargo install -f cross
 
-      - name: Run tests
-        run: cross test
-
-      - name: Build release executable
+      - name: Build release executable (cross)
+        if: ${{ matrix.cross }}
         run: cross build --target ${{ matrix.target }} --release
 
       - name: Build release package
@@ -54,12 +89,14 @@ jobs:
         run: ls -lh *.zip
 
       - name: Upload package artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v3
         with:
           name: zips
           path: portr-*.zip
 
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -71,7 +108,6 @@ jobs:
         run: find dist -type f
 
       - name: upload artifact
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           name: r${{ github.run_number }}
