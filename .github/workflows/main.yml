@@ -6,16 +6,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out code
-  #       uses: actions/checkout@v3
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
 
-  #     - name: Run tests
-  #       run: cargo test
+      - name: Run tests
+        run: cargo test
 
   build:
+    needs: test
     runs-on: ${{ matrix.runner }}
 
     strategy:
@@ -87,30 +88,31 @@ jobs:
       - name: List packages
         run: ls -lh *.zip
 
-      # - name: Upload package artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: zips
-      #     path: portr-*.zip
+      - name: Upload package artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: zips
+          path: portr-*.zip
 
-  # release:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   steps:
-  #     - uses: actions/download-artifact@v3
-  #       with:
-  #         path: dist
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: dist
 
-  #     - name: List artifacts
-  #       run: find dist -type f
+      - name: List artifacts
+        run: find dist -type f
 
-  #     - name: upload artifact
-  #       if: github.ref == 'refs/heads/main'
-  #       uses: softprops/action-gh-release@v1
-  #       with:
-  #         name: r${{ github.run_number }}
-  #         files: dist/zips/portr-*.zip
-  #         fail_on_unmatched_files: yes
-  #         draft: no
-  #         prerelease: no
-  #         tag_name: r${{ github.run_number }}
+      - name: upload artifact
+        uses: softprops/action-gh-release@v1
+        with:
+          name: r${{ github.run_number }}
+          files: dist/zips/portr-*.zip
+          fail_on_unmatched_files: yes
+          draft: no
+          prerelease: no
+          tag_name: r${{ github.run_number }}
