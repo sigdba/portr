@@ -59,6 +59,7 @@ jobs:
         run: rustup target add ${{ matrix.target }}
 
       - name: Build release executable (direct)
+        if: ${{ matrix.channel }}
         run: cargo build --target ${{ matrix.target }} --release
 
       - name: Install cross
